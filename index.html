@@ -88,14 +88,13 @@
 
     <h2>テーブルデータ入力・生成エリア</h2>
     <div class="container">
-        <textarea id="inputData" placeholder="Name
+        <textarea id="inputData">Name
 種別
 ブドウ品種
 生産者名
 産地
 内容量
-アルコール"></textarea>
-        <textarea id="outputTableHtml" readonly placeholder="ここにHTML形式で出力されます"></textarea>
+アルコール</textarea> <textarea id="outputTableHtml" readonly placeholder="ここにHTML形式で出力されます"></textarea>
     </div>
 
     <div id="copyPasteArea">
@@ -209,7 +208,9 @@
                 });
 
                 // ページロード時にも一度結合処理を実行（初期表示のため）
-                updateCopyPasteOutput();
+                // inputDataの初期値が設定されたので、ページロード時に一度テーブルHTMLを生成・表示する
+                inputData.dispatchEvent(new Event('input'));
+
 
             } catch (e) {
                 console.error("An error occurred during page initialization:", e);
