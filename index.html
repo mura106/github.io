@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>テキスト変換ツール</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column; /* 要素を縦に並べる */
+            font-family: sans-serif;
+            margin: 0; /* デフォルトのマージンをリセット */
+            padding: 10px; /* 全体にパディングを追加 */
+            background-color: #f4f4f4; /* 背景色 */
+            align-items: center; /* 中央寄せ */
+        }
+        .container {
+            width: 100%;
+            max-width: 800px; /* 最大幅を設定 */
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px; /* コンテナ間にスペースを追加 */
+            flex-wrap: wrap; /* 画面幅が狭い場合に折り返す */
+        }
+        textarea {
+            width: 48%; /* 左右に並べたときにスペースを確保 */
+            min-width: 300px; /* 最小幅を設定 */
+            height: 250px; /* 高さを調整 */
+            margin: 5px; /* マージンを調整 */
+            padding: 10px;
+            border: 1px solid #ccc;
+            font-family: monospace; /* 等幅フォントの方が見やすいでしょう */
+            box-sizing: border-box; /* パディングとボーダーを要素のサイズに含める */
+            border-radius: 5px; /* 角を丸くする */
+            resize: vertical; /* 縦方向のみリサイズ可能にする */
+            flex-grow: 1; /* 可能な限り幅を広げる */
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #007bff; /* フォーカス時のボーダー色 */
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* フォーカス時の影 */
+        }
+        h2 {
+            width: 100%;
+            max-width: 800px; /* 最大幅を設定 */
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        /* コピペ用エリアのスタイル */
+        #copyPasteArea {
+            width: 100%; /* 幅いっぱいに表示 */
+            max-width: 800px; /* 最大幅を設定 */
+            margin-top: 20px; /* 上部にスペース */
+        }
+        #copyPasteOutput {
+            width: 100%; /* 幅いっぱいに表示 */
+            height: 300px; /* 高さを調整 */
+            margin: 5px 0; /* 上下のマージン */
+            padding: 10px;
+            border: 1px solid #ccc;
+            font-family: monospace;
+            box-sizing: border-box;
+            border-radius: 5px;
+            resize: vertical;
+            background-color: #e9e9e9; /* 少し異なる背景色 */
+        }
+
+        /* レスポンシブ対応 */
+        @media (max-width: 600px) {
+            .container {
+                flex-direction: column; /* 縦並びにする */
+            }
+            textarea {
+                width: 100%; /* 幅いっぱいに */
+                margin: 5px 0; /* マージン調整 */
+            }
+        }
+    </style>
+</head>
+<body>
+    <h2>テキスト変換エリア</h2>
+    <div class="container">
+        <textarea id="inputText" placeholder="ここに文章を貼り付けてください"></textarea>
+        <textarea id="outputText" readonly placeholder="ここにHTML形式で出力されます"></textarea>
+    </div>
+
+    <h2>テーブルデータ入力・生成エリア</h2>
+    <div class="container">
+        <textarea id="inputData" placeholder="Name
+種別
+ブドウ品種
+生産者名
+産地
+内容量
+アルコール"></textarea>
+        <textarea id="outputTableHtml" readonly placeholder="ここにHTML形式で出力されます"></textarea>
+    </div>
+
+    <div id="copyPasteArea">
+        <h2>コピペ用</h2>
+        <textarea id="copyPasteOutput" readonly placeholder="ここに結合されたHTMLが出力されます"></textarea>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                // 上部のテキスト変換機能
+                const inputText = document.getElementById('inputText');
+                const outputText = document.getElementById('outputText');
+
+                // 下部のテーブルデータ入力・生成機能
+                const inputData = document.getElementById('inputData');
+                const outputTableHtml = document.getElementById('outputTableHtml');
+
+                // コピペ用出力エリア
+                const copyPasteOutput = document.getElementById('copyPasteOutput');
+
+                // 要素が正しく取得できたか確認
+                if (!inputText || !outputText || !inputData || !outputTableHtml || !copyPasteOutput) {
+                    console.error("Error: One or more required DOM elements were not found.");
+                    // 必要に応じてユーザーへのエラー表示などの処理を追加
+                    return; // 要素が見つからなければ処理を終了
+                }
+
+
+                // テーブルのHTMLテンプレート
+                const tableTemplate = `
+<table cellpadding="6" cellspacing="0" border="0" width="100%">
+<tr bgcolor="#b8d1d0"><th align="left"><font size="1">Name</font></th><td><font size="1">？？</font></td></tr>
+<tr bgcolor="#ffffff"><th align="left"><font size="1">種別</font></th><td><font size="1">？？</font></td></tr>
+<tr bgcolor="#b8d1d0"><th align="left"><font size="1">ブドウ品種</font></th><td><font size="1">？？</font></td></tr>
+<tr bgcolor="#ffffff"><th align="left"><font size="1">生産者名</font></th><td><font size="1">？？</font></td></tr>
+<tr bgcolor="#b8d1d0"><th align="left"><font size="1">産地</font></th><td><font size="1">？？</font></td></tr>
+<tr bgcolor="#ffffff"><th align="left"><font size="1">内容量</font></th><td><font size="1">？？</font></td></tr>
+<tr bgcolor="#b8d1d0"><th align="left"><font size="1">アルコール</font></th><td><font size="1">？？</font></td></tr>
+</table>
+`;
+
+                // 固定の注意書きHTML
+                const disclaimerHtml = `
+<br>
+<font color="696969" size="1">「当店ではヴィンテージによる管理を行っておりません。写真や商品説明にかかわらず、
+最新のヴィンテージをお届けいたします。<br>
+ヴィンテージ指定などございましたら、商品購入前にお問合せ下さいませ。」
+</font>
+`;
+
+                // 出力を結合してコピペ用エリアに表示する関数
+                function updateCopyPasteOutput() {
+                    try {
+                        const combinedOutput = outputText.value + outputTableHtml.value + disclaimerHtml;
+                        copyPasteOutput.value = combinedOutput.trim(); // 前後の空白を削除して表示
+                    } catch (e) {
+                        console.error("Error updating copy paste output:", e);
+                    }
+                }
+
+                // イベントリスナーを設定
+                inputText.addEventListener('input', function() {
+                    try {
+                        let text = this.value;
+
+                        // 1. HTML特殊文字をエスケープする（<, >, & を変換）
+                        text = text.replace(/&/g, '&amp;')
+                                   .replace(/</g, '&lt;')
+                                   .replace(/>/g, '&gt;');
+
+                        // 2. 改行(\n)を<br>に置換
+                        text = text.replace(/\n/g, '<br>\n');
+
+                        // 3. !で囲んだ部分を太字(<b>)に置換
+                        text = text.replace(/!([^!]+)!/g, '<b>$1</b>');
+
+                        // 4. "で囲んだ部分を赤文字かつフォントサイズを3に置換
+                        text = text.replace(/"([^"]+)"/g, '<font color="red" size="3">$1</font>');
+
+                        // 5. 'で囲んだ部分を青文字かつフォントサイズを2に置換
+                        text = text.replace(/'([^']+)'/g, '<font color="blue" size="2">$1</font>');
+
+                        outputText.value = text;
+                        updateCopyPasteOutput(); // テキスト変換エリア更新時にも結合を更新
+                    } catch (e) {
+                        console.error("Error in inputText input handler:", e);
+                    }
+                });
+
+                inputData.addEventListener('input', function() {
+                    try {
+                        const lines = this.value.split('\n'); // 入力を行ごとに分割
+                        let generatedHtml = tableTemplate; // テンプレートをコピー
+
+                        // 行ごとに「？？」を置き換え
+                        for (let i = 0; i < lines.length; i++) {
+                            // 最初の「？？」を現在の行の内容で置き換え
+                            generatedHtml = generatedHtml.replace('？？', lines[i]);
+                        }
+
+                        // 残っている「？？」はそのままにするか、空文字列で置き換えるなど、必要に応じて調整
+                        // generatedHtml = generatedHtml.replace(/？？/g, ''); // 例: 残りを空文字列で置き換え
+
+                        // 生成されたHTMLコードを右下のテキストエリアに表示
+                        outputTableHtml.value = generatedHtml.trim(); // 前後の空白を削除して表示
+                        updateCopyPasteOutput(); // テーブルエリア更新時にも結合を更新
+                    } catch (e) {
+                        console.error("Error in inputData input handler:", e);
+                    }
+                });
+
+                // ページロード時にも一度結合処理を実行（初期表示のため）
+                updateCopyPasteOutput();
+
+            } catch (e) {
+                console.error("An error occurred during page initialization:", e);
+            }
+        });
+    </script>
+</body>
+</html>
